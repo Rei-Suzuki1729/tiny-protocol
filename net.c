@@ -101,17 +101,23 @@ net_device_add_iface(struct net_device *dev, struct net_iface *iface)
             return -1;
         }
     }
+    iface->next = dev->ifaces;
     iface->dev = dev;
-
-
-
+    dev->ifaces = iface;
     return 0;
-
 }
 
 struct net_iface *
 net_device_get_iface(struct net_device *dev, int family)
 {
+    struct net_iface *entry;
+
+    for (entry = dev->ifaces; entry; entry = entry->next) {
+        if (entry->family == family) {
+            break;
+        }
+    }
+    return entry;
 }
 
 int

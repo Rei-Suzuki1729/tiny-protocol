@@ -167,6 +167,21 @@ ip_iface_select(ip_addr_t addr)
 int
 ip_protocol_register(uint8_t type, void (*handler)(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst, struct ip_iface *iface))
 {
+    struct ip_protocol *entry;
+
+
+
+
+
+
+
+
+
+
+
+    infof("registered, type=%u", entry->type);
+    return 0;
+
 }
 
 static void
@@ -221,6 +236,11 @@ ip_input(const uint8_t *data, size_t len, struct net_device *dev)
     debugf("dev=%s, iface=%s, protocol=%u, total=%u",
         dev->name, ip_addr_ntop(iface->unicast, addr, sizeof(addr)), hdr->protocol, total);
     ip_dump(data, total);
+
+
+
+    /* unsupported protocol */
+
 }
 
 static int

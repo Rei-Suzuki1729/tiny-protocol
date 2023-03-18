@@ -98,12 +98,45 @@ ip_dump(const uint8_t *data, size_t len)
 struct ip_iface *
 ip_iface_alloc(const char *unicast, const char *netmask)
 {
+    struct ip_iface *iface;
+
+    iface = memory_alloc(sizeof(*iface));
+    if (!iface) {
+        errorf("memory_alloc() failure");
+        return NULL;
+    }
+    NET_IFACE(iface)->family = NET_IFACE_FAMILY_IP;
+
+
+
+
+
+
+
+
+    return iface;
+
 }
 
 /* NOTE: must not be call after net_run() */
 int
 ip_iface_register(struct net_device *dev, struct ip_iface *iface)
 {
+        char addr1[IP_ADDR_STR_LEN];
+    char addr2[IP_ADDR_STR_LEN];
+    char addr3[IP_ADDR_STR_LEN];
+
+
+
+
+
+
+    infof("registered: dev=%s, unicast=%s, netmask=%s, broadcast=%s", dev->name,
+        ip_addr_ntop(iface->unicast, addr1, sizeof(addr1)),
+        ip_addr_ntop(iface->netmask, addr2, sizeof(addr2)),
+        ip_addr_ntop(iface->broadcast, addr3, sizeof(addr3)));
+    return 0;
+
 }
 
 struct ip_iface *
@@ -117,6 +150,8 @@ ip_input(const uint8_t *data, size_t len, struct net_device *dev)
     struct ip_hdr *hdr;
     uint8_t v;
     uint16_t hlen, total, offset;
+    struct ip_iface *iface;
+    char addr[IP_ADDR_STR_LEN];
 
     if (len < IP_HDR_SIZE_MIN) {
         errorf("too short");
@@ -147,7 +182,7 @@ ip_input(const uint8_t *data, size_t len, struct net_device *dev)
         errorf("fragments does not support");
         return;
     }
-    debugf("dev=%s, protocol=%u, total=%u", dev->name, hdr->protocol, total);
+    debugf("dev=%s,iface=%s, protocol=%u, total=%u", dev->name,ip_addr_ntop(iface->unicast, addr, sizeof(addr)), hdr->protocol, total);
     ip_dump(data, total);
 }
 

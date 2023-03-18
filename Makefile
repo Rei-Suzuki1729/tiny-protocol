@@ -8,7 +8,6 @@ OBJS = util.o \
        ip.o \
        icmp.o \
 
-
 TESTS = test/step0.exe \
         test/step1.exe \
         test/step2.exe \
@@ -19,6 +18,7 @@ TESTS = test/step0.exe \
         test/step7.exe \
         test/step8.exe \
         test/step9.exe \
+        test/step10.exe \
 
 CFLAGS := $(CFLAGS) -g -W -Wall -Wno-unused-parameter -iquote .
 

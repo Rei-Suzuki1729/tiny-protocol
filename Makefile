@@ -7,7 +7,6 @@ OBJS = util.o \
        net.o \
        ip.o \
 
-
 TESTS = test/step0.exe \
         test/step1.exe \
         test/step2.exe \

@@ -8,9 +8,6 @@
 #include "util.h"
 #include "net.h"
 
-#include "ip.h"
-
-
 struct net_protocol {
     struct net_protocol *next;
     uint16_t type;
@@ -134,7 +131,6 @@ net_protocol_register(uint16_t type, void (*handler)(const uint8_t *data, size_t
     protocols = proto;
     infof("registered, type=0x%04x", type);
     return 0;
-
 }
 
 int
@@ -145,20 +141,31 @@ net_input_handler(uint16_t type, const uint8_t *data, size_t len, struct net_dev
 
     for (proto = protocols; proto; proto = proto->next) {
         if (proto->type == type) {
-
-
-
-
-
-            debugf("queue pushed (num:%u), dev=%s, type=0x%04x, len=%zu",
-                proto->queue.num, dev->name, type, len);
+            entry = memory_alloc(sizeof(*entry) + len);
+            if (!entry) {
+                errorf("memory_alloc() failure");
+                return -1;
+            }
+            entry->dev = dev;
+            entry->len = len;
+            memcpy(entry->data, data, len);
+            if (!queue_push(&proto->queue, entry)) {
+                errorf("queue_push() failure");
+                memory_free(entry);
+                return -1;
+            }
+            debugf("queue pushed (num:%u), dev=%s, type=0x%04x, len=%zu", proto->queue.num, dev->name, type, len);
             debugdump(data, len);
             return 0;
         }
     }
     /* unsupported protocol */
     return 0;
+}
 
+int
+net_softirq_handler(void)
+{
 }
 
 int
@@ -191,6 +198,8 @@ net_shutdown(void)
     debugf("shutting down");
 }
 
+#include "ip.h"
+
 int
 net_init(void)
 {
@@ -202,7 +211,6 @@ net_init(void)
         errorf("ip_init() failure");
         return -1;
     }
-
     infof("initialized");
     return 0;
 }

@@ -3,6 +3,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include "platform.h"
+
 #include "util.h"
 #include "net.h"
 #include "ip.h"
@@ -23,6 +25,9 @@ struct ip_hdr {
 
 const ip_addr_t IP_ADDR_ANY       = 0x00000000; /* 0.0.0.0 */
 const ip_addr_t IP_ADDR_BROADCAST = 0xffffffff; /* 255.255.255.255 */
+
+/* NOTE: if you want to add/delete the entries after net_run(), you need to protect these lists with a mutex. */
+static struct ip_iface *ifaces;
 
 int
 ip_addr_pton(const char *p, ip_addr_t *n)
@@ -90,27 +95,95 @@ ip_dump(const uint8_t *data, size_t len)
     funlockfile(stderr);
 }
 
+struct ip_iface *
+ip_iface_alloc(const char *unicast, const char *netmask)
+{
+    struct ip_iface *iface;
+
+    iface = memory_alloc(sizeof(*iface));
+    if (!iface) {
+        errorf("memory_alloc() failure");
+        return NULL;
+    }
+    NET_IFACE(iface)->family = NET_IFACE_FAMILY_IP;
+
+
+
+
+
+
+
+
+    return iface;
+
+}
+
+/* NOTE: must not be call after net_run() */
+int
+ip_iface_register(struct net_device *dev, struct ip_iface *iface)
+{
+        char addr1[IP_ADDR_STR_LEN];
+    char addr2[IP_ADDR_STR_LEN];
+    char addr3[IP_ADDR_STR_LEN];
+
+
+
+
+
+
+    infof("registered: dev=%s, unicast=%s, netmask=%s, broadcast=%s", dev->name,
+        ip_addr_ntop(iface->unicast, addr1, sizeof(addr1)),
+        ip_addr_ntop(iface->netmask, addr2, sizeof(addr2)),
+        ip_addr_ntop(iface->broadcast, addr3, sizeof(addr3)));
+    return 0;
+
+}
+
+struct ip_iface *
+ip_iface_select(ip_addr_t addr)
+{
+}
+
 static void
 ip_input(const uint8_t *data, size_t len, struct net_device *dev)
 {
-        struct ip_hdr *hdr;
+    struct ip_hdr *hdr;
     uint8_t v;
     uint16_t hlen, total, offset;
+    struct ip_iface *iface;
+    char addr[IP_ADDR_STR_LEN];
 
     if (len < IP_HDR_SIZE_MIN) {
         errorf("too short");
         return;
     }
     hdr = (struct ip_hdr *)data;
-
+    v = hdr->vhl >> 4;
+    if (v != IP_VERSION_IPV4) {
+        errorf("ip version error: v=%u", v);
+        return;
+    }
+    hlen = (hdr->vhl & 0x0f) << 2;
+    if (len < hlen) {
+        errorf("header length error: len=%zu < hlen=%u", len, hlen);
+        return;
+    }
+    total = ntoh16(hdr->total);
+    if (len < total) {
+        errorf("total length error: len=%zu < total=%u", len, total);
+        return;
+    }
+    if (cksum16((uint16_t *)hdr, hlen, 0) != 0) {
+        errorf("checksum error: sum=0x%04x, verify=0x%04x", ntoh16(hdr->sum), ntoh16(cksum16((uint16_t *)hdr, hlen, -hdr->sum)));
+        return;
+    }
     offset = ntoh16(hdr->offset);
     if (offset & 0x2000 || offset & 0x1fff) {
         errorf("fragments does not support");
         return;
     }
-    debugf("dev=%s, protocol=%u, total=%u", dev->name, hdr->protocol, total);
+    debugf("dev=%s,iface=%s, protocol=%u, total=%u", dev->name,ip_addr_ntop(iface->unicast, addr, sizeof(addr)), hdr->protocol, total);
     ip_dump(data, total);
-
 }
 
 int

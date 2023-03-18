@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <signal.h>
+#include <sys/types.h>
 #include <unistd.h>
-
 
 #include "util.h"
 #include "net.h"
@@ -33,6 +34,25 @@ setup(void)
         errorf("net_init() failure");
         return -1;
     }
+    dev = loopback_init();
+    if (!dev) {
+        errorf("loopback_init() failure");
+        return -1;
+    }
+    iface = ip_iface_alloc(LOOPBACK_IP_ADDR, LOOPBACK_NETMASK);
+    if (!iface) {
+        errorf("ip_iface_alloc() failure");
+        return -1;
+    }
+    if (ip_iface_register(dev, iface) == -1) {
+        errorf("ip_iface_register() failure");
+        return -1;
+    }
+    if (net_run() == -1) {
+        errorf("net_run() failure");
+        return -1;
+    }
+    return 0;
 }
 
 static void
@@ -46,7 +66,6 @@ main(int argc, char *argv[])
 {
     ip_addr_t src, dst;
     uint16_t id, seq = 0;
-
     size_t offset = IP_HDR_SIZE_MIN + ICMP_HDR_SIZE;
 
     if (setup() == -1) {
@@ -56,14 +75,13 @@ main(int argc, char *argv[])
     ip_addr_pton(LOOPBACK_IP_ADDR, &src);
     dst = src;
     id = getpid() % UINT16_MAX;
-while (!terminate) {
-    if (icmp_output(ICMP_TYPE_ECHO, 0, hton32(id << 16 | ++seq), test_data + offset, sizeof(test_data) - offset, src, dst)  == -1) {
-        errorf("icmp_output() failure");
-        break;
+    while (!terminate) {
+        if (icmp_output(ICMP_TYPE_ECHO, 0, hton32(id << 16 | ++seq), test_data + offset, sizeof(test_data) - offset, src, dst) == -1) {
+            errorf("icmp_output() failure");
+            break;
+        }
+        sleep(1);
     }
-    sleep(1);
-}
-cleanup();
-return 0;
-
+    cleanup();
+    return 0;
 }

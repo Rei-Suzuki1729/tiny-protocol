@@ -3,7 +3,6 @@
 #include <signal.h>
 #include <unistd.h>
 
-
 #include "util.h"
 #include "net.h"
 #include "ip.h"
@@ -32,6 +31,25 @@ setup(void)
         errorf("net_init() failure");
         return -1;
     }
+    dev = loopback_init();
+    if (!dev) {
+        errorf("loopback_init() failure");
+        return -1;
+    }
+    iface = ip_iface_alloc(LOOPBACK_IP_ADDR, LOOPBACK_NETMASK);
+    if (!iface) {
+        errorf("ip_iface_alloc() failure");
+        return -1;
+    }
+    if (ip_iface_register(dev, iface) == -1) {
+        errorf("ip_iface_register() failure");
+        return -1;
+    }
+    if (net_run() == -1) {
+        errorf("net_run() failure");
+        return -1;
+    }
+    return 0;
 }
 
 static void
@@ -52,14 +70,13 @@ main(int argc, char *argv[])
     }
     ip_addr_pton(LOOPBACK_IP_ADDR, &src);
     dst = src;
-while (!terminate) {
-    if (ip_output(1, test_data + offset, sizeof(test_data) - offset, src, dst) == -1) {
-        errorf("ip_output() failure");
-        break;
+    while (!terminate) {
+        if (ip_output(1, test_data + offset, sizeof(test_data) - offset, src, dst) == -1) {
+            errorf("ip_output() failure");
+            break;
+        }
+        sleep(1);
     }
-    sleep(1);
-}
-cleanup();
-return 0;
-
+    cleanup();
+    return 0;
 }

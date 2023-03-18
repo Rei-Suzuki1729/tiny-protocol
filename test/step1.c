@@ -46,5 +46,4 @@ main(int argc, char *argv[])
     }
     net_shutdown();
     return 0;
-
 }

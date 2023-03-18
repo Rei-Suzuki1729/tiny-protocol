@@ -2,10 +2,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "platform.h"
+
 #include "util.h"
 #include "net.h"
 
 #define DUMMY_MTU UINT16_MAX /* maximum size of IP datagram */
+
+#define DUMMY_IRQ INTR_IRQ_BASE
 
 static int
 dummy_transmit(struct net_device *dev, uint16_t type, const uint8_t *data, size_t len, const void *dst)
@@ -15,7 +19,6 @@ dummy_transmit(struct net_device *dev, uint16_t type, const uint8_t *data, size_
     /* drop data */
     intr_raise_irq(DUMMY_IRQ);
     return 0;
-
 }
 
 static int
@@ -51,5 +54,4 @@ dummy_init(void)
     intr_request_irq(DUMMY_IRQ, dummy_isr, INTR_IRQ_SHARED, dev->name, dev);
     debugf("initialized, dev=%s", dev->name);
     return dev;
-
 }

@@ -5,7 +5,7 @@
 #include "util.h"
 #include "net.h"
 
-#include "driver/dummy.h"
+#include "driver/loopback.h"
 
 #include "test.h"
 
@@ -28,9 +28,9 @@ main(int argc, char *argv[])
         errorf("net_init() failure");
         return -1;
     }
-    dev = dummy_init();
+    dev = loopback_init();
     if (!dev) {
-        errorf("dummy_init() failure");
+        errorf("loopback_init() failure");
         return -1;
     }
     if (net_run() == -1) {

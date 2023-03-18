@@ -8,7 +8,6 @@ OBJS = util.o \
        ip.o \
        icmp.o \
 
-
 TESTS = test/step0.exe \
         test/step1.exe \
         test/step2.exe \

@@ -1,18 +1,13 @@
 #include <stdio.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include "util.h"
 #include "net.h"
 #include "ip.h"
-#include "icmp.h"
 
 #include "driver/loopback.h"
 #include "driver/ether_tap.h"
-
 
 #include "test.h"
 
@@ -80,7 +75,6 @@ cleanup(void)
 int
 main(int argc, char *argv[])
 {
-    signal(SIGINT, on_signal);
     if (setup() == -1) {
         errorf("setup() failure");
         return -1;
@@ -89,5 +83,5 @@ main(int argc, char *argv[])
         sleep(1);
     }
     cleanup();
-
+    return 0;
 }

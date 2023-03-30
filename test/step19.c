@@ -84,7 +84,7 @@ cleanup(void)
 int
 main(int argc, char *argv[])
 {
-        int soc;
+    int soc;
     struct ip_endpoint local;
 
     if (setup() == -1) {
@@ -109,5 +109,4 @@ main(int argc, char *argv[])
     udp_close(soc);
     cleanup();
     return 0;
-
 }

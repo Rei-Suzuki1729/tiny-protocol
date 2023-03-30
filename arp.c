@@ -315,14 +315,13 @@ arp_timer_handler(void)
     gettimeofday(&now, NULL);
     for (entry = caches; entry < tailof(caches); entry++) {
         if (entry->state != ARP_CACHE_STATE_FREE && entry->state != ARP_CACHE_STATE_STATIC) {
-
-
-
-
+            timersub(&now, &entry->timestamp, &diff);
+            if (diff.tv_sec > ARP_CACHE_TIMEOUT) {
+                arp_cache_delete(entry);
+            }
         }
     }
     mutex_unlock(&mutex);
-
 }
 
 int
@@ -332,6 +331,10 @@ arp_init(void)
 
     if (net_protocol_register(NET_PROTOCOL_TYPE_ARP, arp_input) == -1) {
         errorf("net_protocol_register() failure");
+        return -1;
+    }
+    if (net_timer_register(interval, arp_timer_handler) == -1) {
+        errorf("net_timer_register() failure");
         return -1;
     }
     return 0;

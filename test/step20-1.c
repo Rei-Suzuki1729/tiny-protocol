@@ -85,7 +85,10 @@ int
 main(int argc, char *argv[])
 {
     int soc;
-    struct ip_endpoint local;
+    struct ip_endpoint local, foreign;
+    uint8_t buf[1024];
+    ssize_t ret;
+    char ep[IP_ENDPOINT_STR_LEN];
 
     if (setup() == -1) {
         errorf("setup() failure");
@@ -104,7 +107,17 @@ main(int argc, char *argv[])
     }
     debugf("waiting for data...");
     while (!terminate) {
-        sleep(1);
+        ret = udp_recvfrom(soc, buf, sizeof(buf), &foreign);
+        if (ret == -1) {
+            errorf("udp_recvfrom() failure");
+            break;
+        }
+        debugf("%zd bytes data form %s", ret, ip_endpoint_ntop(&foreign, ep, sizeof(ep)));
+        hexdump(stderr, buf, ret);
+        if (udp_sendto(soc, buf, ret, &foreign) == -1) {
+            errorf("udp_sendto() failure");
+            break;
+        }
     }
     udp_close(soc);
     cleanup();

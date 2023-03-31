@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <errno.h>
 
 #include "platform.h"
 
@@ -98,7 +99,6 @@ udp_pcb_release(struct udp_pcb *pcb)
         pcb->state = UDP_PCB_STATE_CLOSING;
         return;
     }
-
     pcb->state = UDP_PCB_STATE_FREE;
     pcb->local.addr = IP_ADDR_ANY;
     pcb->local.port = 0;
@@ -247,6 +247,11 @@ udp_output(struct ip_endpoint *src, struct ip_endpoint *dst, const  uint8_t *dat
     return len;
 }
 
+static void
+event_handler(void *arg)
+{
+}
+
 int
 udp_init(void)
 {
@@ -368,7 +373,6 @@ udp_sendto(int id, uint8_t *data, size_t len, struct ip_endpoint *foreign)
     local.port = pcb->local.port;
     mutex_unlock(&mutex);
     return udp_output(&local, foreign, data, len);
-
 }
 
 ssize_t
@@ -386,23 +390,23 @@ udp_recvfrom(int id, uint8_t *buf, size_t size, struct ip_endpoint *foreign)
         return -1;
     }
     while (1) {
-    entry = queue_pop(&pcb->queue);
-    if (entry) {
-        break;
-    }
-    pcb->wc++;
-    mutex_unlock(&mutex);
-    sleep(1);
-    mutex_lock(&mutex);
-    pcb->wc--;
-    if (pcb->state == UDP_PCB_STATE_CLOSING) {
-        debugf("closed");
-        udp_pcb_release(pcb);
+        entry = queue_pop(&pcb->queue);
+        if (entry) {
+            break;
+        }
+        pcb->wc++;
         mutex_unlock(&mutex);
-        return -1;
+        sleep(1);
+        mutex_lock(&mutex);
+        pcb->wc--;
+        if (pcb->state == UDP_PCB_STATE_CLOSING) {
+            debugf("closed");
+            udp_pcb_release(pcb);
+            mutex_unlock(&mutex);
+            return -1;
+        }
     }
-}
-mutex_unlock(&mutex);
+    mutex_unlock(&mutex);
     if (foreign) {
         *foreign = entry->foreign;
     }
@@ -410,5 +414,4 @@ mutex_unlock(&mutex);
     memcpy(buf, entry->data, len);
     memory_free(entry);
     return len;
-
 }
